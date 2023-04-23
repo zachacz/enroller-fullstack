@@ -8,7 +8,17 @@
     </div>
 
     <div v-else>
-      <LoginForm @login="(user) => logMeIn(user)"></LoginForm>
+      <button :class="signingUp ? 'button-outline' : '' "@click="signingUp = false"> Logowanie </button>
+      <button :class="!signingUp ? 'button-outline' : '' "@click="signingUp = true"> Rejestracja </button>
+
+      <div v-if="message" class="alert">
+
+        {{message}}
+
+      </div>
+
+      <LoginForm v-if="!signingUp" @login="(user) => logMeIn(user)"></LoginForm>
+      <LoginForm v-else @login="(user) => register(user)" button-label="Załóż konto"></LoginForm>
     </div>
   </div>
 </template>
@@ -18,20 +28,47 @@ import "milligram";
 import LoginForm from "./LoginForm";
 import UserPanel from "./UserPanel";
 import MeetingsPage from "./meetings/MeetingsPage";
+import axios from "axios"
 
 export default {
   components: {LoginForm, MeetingsPage, UserPanel},
   data() {
     return {
+      message: "",
+      signingUp: false,
       authenticatedUsername: '',
     }
   },
+
   methods: {
     logMeIn(user) {
-      this.authenticatedUsername = user.login;
+      axios.post("/api/tokens", user)
+          .then(response => {
+            this.authenticatedUsername = user.login;
+            const token = response.data.token;
+            axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+            axios.get('/api/meetings')
+            this.message = ("Udało się zalogować")
+          })
+          .catch(response => {
+            this.message = ("Nie udało się zalogoać")
+
+          })
     },
     logMeOut() {
       this.authenticatedUsername = '';
+      delete axios.defaults.headers.common.Authorization;
+    },
+
+    register(user) {
+      axios.post('/api/participants', user)
+          .then(response => {
+            this.message = ("Udało się założyć konto")
+
+          })
+          .catch(response => {
+            this.message = ("Nie udało się założyć konta")
+          });
     }
   }
 }
@@ -41,5 +78,14 @@ export default {
 #app {
   max-width: 1000px;
   margin: 0 auto;
+}
+
+.alert {
+
+  background: darkseagreen;
+  border: 1px solid black;
+  font-size: 20px;
+  padding: 5px;
+
 }
 </style>

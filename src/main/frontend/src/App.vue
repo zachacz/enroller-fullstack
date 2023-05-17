@@ -4,16 +4,17 @@
 
     <div v-if="authenticatedUsername">
       <UserPanel :username="authenticatedUsername" @logout="logMeOut()"></UserPanel>
-      <MeetingsPage :username="authenticatedUsername"></MeetingsPage>
+      <MeetingsPage :username="authenticatedUsername" :meetings="meetings"></MeetingsPage>
     </div>
 
     <div v-else>
       <button :class="signingUp ? 'button-outline' : '' "@click="signingUp = false"> Logowanie </button>
       <button :class="!signingUp ? 'button-outline' : '' "@click="signingUp = true"> Rejestracja </button>
 
-      <div v-if="message" class="alert">
-
-        {{message}}
+      <div v-if="message" class="['alert', 'alert-' + (this.isError ? 'error' : 'success')]">
+      </div>
+      <div :class="['alert', 'alert-' + (this.isError ? 'error' : 'success')]" v-if="message">
+        {{ message }}
 
       </div>
 
@@ -37,6 +38,8 @@ export default {
       message: "",
       signingUp: false,
       authenticatedUsername: '',
+      meetings: [],
+      isError: false
     }
   },
 
@@ -48,11 +51,19 @@ export default {
             const token = response.data.token;
             axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
             axios.get('/api/meetings')
+                .then(response => {
+                  this.meetings = response.data;
+                })
+                .catch(response => {
+                  this.isError = true;
+                  this.message = ("Nie udało się pobrać listy spotkań")
+                })
+            this.isError = false;
             this.message = ("Udało się zalogować")
           })
           .catch(response => {
-            this.message = ("Nie udało się zalogoać")
-
+            this.isError = true;
+            this.message = ("Nie udało się zalogować")
           })
     },
     logMeOut() {
@@ -63,13 +74,15 @@ export default {
     register(user) {
       axios.post('/api/participants', user)
           .then(response => {
+            this.isError = false;
             this.message = ("Udało się założyć konto")
 
           })
           .catch(response => {
+            this.isError = true;
             this.message = ("Nie udało się założyć konta")
           });
-    }
+    },
   }
 }
 </script>
@@ -81,11 +94,17 @@ export default {
 }
 
 .alert {
-
-  background: darkseagreen;
   border: 1px solid black;
   font-size: 20px;
   padding: 5px;
+}
 
+.alert-success {
+  background: darkseagreen;
+  border-color: green;
+}
+.alert-error {
+  background: palevioletred;
+  border-color: darkred;
 }
 </style>

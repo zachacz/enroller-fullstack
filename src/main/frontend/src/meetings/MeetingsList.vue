@@ -14,13 +14,13 @@
       <td>{{ meeting.description }}</td>
       <td>
         <ul v-if="meeting.participants">
-          <li v-for="participant in meeting.participants" :key="participant">
-            {{ participant }}
+          <li v-for="participant in meeting.participants" :key="participant.login">
+            {{ participant.login }}
           </li>
         </ul>
       </td>
       <td style="text-align: right; min-width: 400px" v-if="meeting.participants">
-        <button v-if="meeting.participants.indexOf(login) < 0"
+        <button v-if="meeting.participants.findIndex(p => p.login === username) < 0"
                 class="button-outline"
                 @click="$emit('attend', meeting)">
           Zapisz się
@@ -39,7 +39,7 @@
 export default {
   props: {
     meetings: Array,
-    login: String,
+    username: String,
   }
 }
 </script>
